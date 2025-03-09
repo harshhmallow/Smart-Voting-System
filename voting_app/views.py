@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 import json
 import base64
+import logging
 import numpy as np
 import cv2
 from .models import Voter, Vote
@@ -16,6 +17,8 @@ def admin_dashboard(request):
     }
     return render(request, 'admin_dashboard.html', context)
 
+def register_page(request):
+    return render(request, 'register.html')
 
 def vote(request):
     if request.method == 'POST':
@@ -49,17 +52,27 @@ def vote(request):
     # Render the voting form for GET requests
     return render(request, 'vote.html')
 
-@csrf_exempt  # Temporarily disable CSRF for testing
+# Get a logger instance
+logger = logging.getLogger(__name__)
+
 @csrf_exempt
 def register_voter(request):
     if request.method == 'POST':
         try:
+            # Log the incoming request
+            logger.debug("Received POST request to register_voter.")
+            logger.debug(f"Request body: {request.body}")
+
             # Parse JSON data from the request
             data = json.loads(request.body)
             ktu_id = data.get('ktu_id')
             frames_data = data.get('frames_data')  # List of base64-encoded frames
 
+            # Log the KTU ID
+            logger.debug(f"KTU ID received: {ktu_id}")
+
             if not ktu_id or not frames_data:
+                logger.error("KTU ID and frames data are required.")
                 return JsonResponse({'message': 'KTU ID and frames data are required.'}, status=400)
 
             # Decode and process each frame
@@ -76,6 +89,7 @@ def register_voter(request):
                 faces = facedetect.detectMultiScale(gray, 1.3, 5)
 
                 if len(faces) == 0:
+                    logger.warning("No face detected in the current frame.")
                     continue  # Skip frames with no face detected
 
                 # Extract the face region
@@ -88,38 +102,23 @@ def register_voter(request):
             if len(face_data_list) > 0:
                 voter = Voter(ktu_id=ktu_id)
                 voter.save_face_data(face_data_list)
-                return JsonResponse({'message': 'Face data captured and saved successfully.'})
+                logger.info(f"Voter {ktu_id} registered successfully.")
+                return JsonResponse({'message': 'Registration successful! Your face data has been saved.'})
             else:
+                logger.error("No valid face data detected in any frame.")
                 return JsonResponse({'message': 'No valid face data detected in any frame.'}, status=400)
 
+        except json.JSONDecodeError as e:
+            # Log JSON parsing errors
+            logger.error(f"JSON decoding error: {str(e)}")
+            return JsonResponse({'message': 'Invalid JSON data.'}, status=400)
+
         except Exception as e:
+            # Log any unexpected errors
+            logger.error(f"Unexpected error in register_voter: {str(e)}", exc_info=True)
             return JsonResponse({'message': f'An error occurred: {str(e)}'}, status=500)
 
-    return JsonResponse({'message': 'Invalid request method.'}, status=405)
-
-@csrf_exempt
-def check_face_data(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            ktu_id = data.get('ktu_id')
-
-            if not ktu_id:
-                return JsonResponse({'error': 'KTU ID is required.'}, status=400)
-
-            # Query the database for the voter with the given KTU ID
-            voter = Voter.objects.filter(ktu_id=ktu_id).first()
-
-            if voter:
-                return JsonResponse({
-                    'ktu_id': voter.ktu_id,
-                    'face_data': voter.face_data,  # Ensure this is a base64-encoded image
-                    'created_at': voter.created_at.strftime('%Y-%m-%d %H:%M:%S')
-                })
-            else:
-                return JsonResponse({'error': 'No face data found for the given KTU ID.'}, status=404)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
     else:
-        return JsonResponse({'error': 'Invalid request method.'}, status=405)
+        # Log invalid request method
+        logger.warning(f"Invalid request method: {request.method}")
+        return JsonResponse({'message': 'Invalid request method.'}, status=405)
