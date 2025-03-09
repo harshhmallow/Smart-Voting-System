@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vote</title>
+</head>
+<body>
+    <h2>Cast Your Vote</h2>
+    <form action="/vote/" method="post">
+        {% csrf_token %}
+        <label for="ktu_id">KTU ID:</label>
+        <input type="text" name="ktu_id" required>
+        <br><br>
+        <label for="candidate">Choose a candidate:</label>
+        <select name="candidate" required>
+            <option value="KSU">KSU</option>
+            <option value="SFI">SFI</option>
+            <option value="ABVP">ABVP</option>
+            <option value="NOTA">NOTA</option>
+        </select>
+        <br><br>
+        <button type="submit">Vote</button>
+    </form>
+</body>
+</html>
