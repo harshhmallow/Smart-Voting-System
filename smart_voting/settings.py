@@ -33,9 +33,39 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+import os
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+            'class': 'logging.StreamHandler',  # Output to console
+            'formatter': 'simple',  # Use the 'simple' formatter
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],  # Use only the 'console' handler
+            'level': 'INFO',  # Log level for Django framework
+            'propagate': True,
+        },
+        'voting_app': {  # Replace 'voting_app' with your app name
+            'handlers': ['console'],  # Use only the 'console' handler
+            'level': 'DEBUG',  # Log level for your app
+            'propagate': True,
+        },
+    },
+}
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
