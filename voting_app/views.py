@@ -10,6 +10,8 @@ import numpy as np
 import cv2
 from .models import Voter, Vote
 from .face_recognition import FaceRecognition
+from voting_app.forms import VoterForm
+
 
 face_recognition = FaceRecognition()  # Initialize face recognition
 
@@ -72,61 +74,40 @@ def register_voter(request):
             ktu_id = data.get('ktu_id')
             frames_data = data.get('frames_data')  # List of base64-encoded frames
 
-            logger.debug(f"KTU ID received: {ktu_id}, Frames Data: {frames_data}")
-
             if not ktu_id or not frames_data:
-                logger.error("KTU ID and frames data are required.")
                 return JsonResponse({'message': 'KTU ID and frames data are required.'}, status=400)
-
-            if any(',' not in frame for frame in frames_data):
-                logger.error("Invalid frame data detected.")
-                return JsonResponse({'message': 'Valid frame data is required.'}, status=400)
 
             face_data_list = []
             for frame_data in frames_data:
-                image_data = base64.b64decode(frame_data.split(',')[1]) if ',' in frame_data else None
-                if image_data is None:
-                    logger.error("Invalid base64 image data.")
-                    continue  # Skip this frame if the image data is invalid
+                if ',' in frame_data:
+                    image_data = base64.b64decode(frame_data.split(',')[1])
+                    nparr = np.frombuffer(image_data, np.uint8)
+                    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    if frame is None or frame.size == 0:
+                        continue  # Skip empty frames
 
-                nparr = np.frombuffer(image_data, np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-                if frame is None or frame.size == 0:
-                    logger.warning("Empty frame detected, skipping this frame.")
-                    continue  # Skip empty frames
-
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                facedetect = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-                faces = facedetect.detectMultiScale(gray, 1.3, 5)
-
-                if len(faces) == 0:
-                    logger.warning("No face detected in the current frame during registration.")
-                    continue  # Skip frames with no face detected
-
-                for (x, y, w, h) in faces:
-                    crop_img = frame[y:y+h, x:x+w]
-                    resized_img = cv2.resize(crop_img, (50, 50))
-                    face_data_list.append(resized_img.tolist())  # Convert to list for JSON serialization
-
-            if len(face_data_list) > 0:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    facedetect = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                    faces = facedetect.detectMultiScale(gray, 1.3, 5)
+                    
+                    for (x, y, w, h) in faces:
+                        crop_img = frame[y:y+h, x:x+w]
+                        resized_img = cv2.resize(crop_img, (50, 50))
+                        face_data_list.append(resized_img.tolist())
+            
+            if face_data_list:
                 voter = Voter(ktu_id=ktu_id)
                 voter.save_face_data(face_data_list)
-                logger.info(f"Voter {ktu_id} registered successfully with face data.")
                 return JsonResponse({'message': 'Registration successful! Your face data has been saved.'})
             else:
-                logger.error("No valid face data detected in any frame.")
                 return JsonResponse({'message': 'No valid face data detected in any frame.'}, status=400)
-
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON decoding error: {str(e)}")
+        
+        except json.JSONDecodeError:
             return JsonResponse({'message': 'Invalid JSON data.'}, status=400)
-
         except Exception as e:
             logger.error(f"Unexpected error in register_voter: {str(e)}", exc_info=True)
             return JsonResponse({'message': f'An error occurred: {str(e)}'}, status=500)
 
-    logger.warning(f"Invalid request method: {request.method}")
     return JsonResponse({'message': 'Invalid request method.'}, status=405)
 
 def register_page(request):
@@ -135,25 +116,34 @@ def register_page(request):
 
 @staff_member_required
 def admin_dashboard(request):
-    """ Admin dashboard to display vote statistics """
-    vote_counts = Vote.objects.values('candidate').annotate(count=Count('candidate'))
-    voters_count = Voter.objects.count()
-    votes_count = Vote.objects.count()
+    """ Admin dashboard to display vote statistics and manage voters """
+    voters = Voter.objects.all()
+    votes = Vote.objects.all()
+    vote_counts = votes.values('candidate').annotate(count=Count('candidate'))
+    voters_count = voters.count()
+    votes_count = votes.count()
 
     election_status = "Ongoing" if votes_count < voters_count else "Completed"
-
-    vote_data = [
-        {'name': vote['candidate'], 'votes': vote['count']}
-        for vote in vote_counts
-    ]
-
+    vote_data = [{'name': vote['candidate'], 'votes': vote['count']} for vote in vote_counts]
+    
+    if request.method == "POST":
+        form = VoterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('register_page')  # Redirects to voter registration page
+    else:
+        form = VoterForm()
+    
     context = {
         'vote_data': vote_data,
         'voters_count': voters_count,
         'votes_count': votes_count,
         'election_status': election_status,
+        'voters': voters,
+        'form': form,
     }
     return render(request, 'admin_dashboard.html', context)
+
 
 @csrf_exempt
 def vote(request):

@@ -2,6 +2,9 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import path
 from . import views
 from .views import admin_dashboard 
+from voting_app.views import register_voter 
+from voting_app.views import register_page
+
 
 urlpatterns = [
     path('admin_dashboard/', staff_member_required(admin_dashboard), name='admin_dashboard'),

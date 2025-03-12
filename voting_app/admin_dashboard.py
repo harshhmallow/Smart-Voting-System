@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from voting_app.models import Voter, Vote
 from voting_app.forms import VoterForm  # Ensure you have a VoterForm in forms.py
+from voting_app.views import register_voter
 
 @login_required
 def admin_dashboard(request):

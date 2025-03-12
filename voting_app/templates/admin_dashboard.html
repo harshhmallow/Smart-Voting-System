@@ -56,8 +56,22 @@
             text-align: center;
         }
         input, button {
-            padding: 8px;
+            padding: 10px;
             margin: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+        button {
+            background-color:rgb(7, 44, 78);
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color:rgb(7, 44, 78);
+        }
+        .add-voter-section {
+            text-align: center;
+            margin-top: 20px;
         }
         canvas {
             display: block;
@@ -105,10 +119,19 @@
 
         <!-- Add New Voter -->
         <h2>Add New Voter</h2>
-        <form method="post">
+        
+        <!-- Redirect Button to Registration Page -->
+        <div class="add-voter-section">
+            <a href="{% url 'register_page' %}">
+                <button>Add Voter</button>
+            </a>
+        </div>
+
+        <!-- OR Inline Form -->
+        <form method="post" action="{% url 'register_voter' %}">
             {% csrf_token %}
             {{ voter_form.as_p }}
-            <button type="submit">Add Voter</button>
+            <button type="submit">Submit Voter</button>
         </form>
 
         <!-- Voter List -->
