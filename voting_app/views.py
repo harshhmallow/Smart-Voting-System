@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.db.models import Count
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.admin.views.decorators import staff_member_required
 import json
 import base64
 import logging
@@ -132,12 +133,25 @@ def register_page(request):
     """ Renders the voter registration page. """
     return render(request, 'register.html')
 
+@staff_member_required
 def admin_dashboard(request):
-    """ Admin dashboard view to display vote counts. """
-    # Calculate vote counts for each candidate
+    """ Admin dashboard to display vote statistics """
     vote_counts = Vote.objects.values('candidate').annotate(count=Count('candidate'))
+    voters_count = Voter.objects.count()
+    votes_count = Vote.objects.count()
+
+    election_status = "Ongoing" if votes_count < voters_count else "Completed"
+
+    vote_data = [
+        {'name': vote['candidate'], 'votes': vote['count']}
+        for vote in vote_counts
+    ]
+
     context = {
-        'vote_counts': vote_counts,
+        'vote_data': vote_data,
+        'voters_count': voters_count,
+        'votes_count': votes_count,
+        'election_status': election_status,
     }
     return render(request, 'admin_dashboard.html', context)
 
