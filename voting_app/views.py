@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.db.models import Count
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404,redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin.views.decorators import staff_member_required
 import json
@@ -22,32 +22,33 @@ def verify_voter(request):
     """ Handles voter face recognition to verify identity before voting. """
     if request.method == 'POST':
         logger.debug(f"Received POST request to verify_voter with body: {request.body}")
+
         try:
-            data = json.loads(request.body)
+            data = json.loads(request.body.decode('utf-8'))  # Ensure proper decoding
+
             ktu_id = data.get('ktu_id')
-            frame_data = data.get('frame_data')  # Base64-encoded image frame
+            frame_data = data.get('frame_data')  # Base64-encoded image
 
-            logger.debug(f"KTU ID: {ktu_id}, Frame Data: {frame_data}")
+            logger.debug(f"Extracted KTU ID: {ktu_id}, Frame Data Length: {len(frame_data) if frame_data else 0}")
 
-            if not ktu_id or not frame_data or ',' not in frame_data:
-                logger.warning("Missing KTU ID or frame data in the request.")
+            if not ktu_id or not frame_data:
+                logger.warning(f"Missing KTU ID: {ktu_id}, or frame data: {frame_data}")
                 return JsonResponse({'message': 'KTU ID and face data are required.'}, status=400)
 
-            # Decode the base64 image
+            # Decode the Base64 image
             try:
-                image_data = base64.b64decode(frame_data)  # Remove the split to check data integrity
+                image_data = base64.b64decode(frame_data)
+                nparr = np.frombuffer(image_data, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             except Exception as e:
                 logger.error(f"Base64 decoding failed: {e}")
                 return JsonResponse({'message': 'Invalid image data.'}, status=400)
 
-            nparr = np.frombuffer(image_data, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
             if frame is None or frame.size == 0:
-                logger.warning("Empty frame detected, cannot process.")
+                logger.warning("Decoded frame is empty or invalid.")
                 return JsonResponse({'message': 'Invalid image data.'}, status=400)
 
-            logger.debug("Decoding base64 image data for face recognition.")
+            logger.debug("Successfully decoded base64 image. Proceeding with face recognition.")
             recognized_ktu_id = face_recognition.recognize_voter(frame)
 
             if recognized_ktu_id == ktu_id:
