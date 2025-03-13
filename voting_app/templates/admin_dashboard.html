@@ -76,6 +76,8 @@
         canvas {
             display: block;
             margin: 20px auto;
+            max-width: 100%;
+            height: 400px !important; /* Fixed chart height */
         }
     </style>
 </head>
@@ -102,7 +104,9 @@
 
         <!-- Live Vote Count -->
         <h2>Live Vote Count</h2>
-        <canvas id="voteChart" width="400" height="200"></canvas>
+        <div style="width: 100%; max-width: 600px; margin: auto;">
+            <canvas id="voteChart"></canvas>
+        </div>
         
         <table>
             <tr>
@@ -152,32 +156,47 @@
     </div>
 
     <script>
-        var ctx = document.getElementById('voteChart').getContext('2d');
+        var ctx = document.getElementById('voteChart').getContext('2d');  // Initialize the canvas context
+    
+        var labels = [];
+        var dataValues = [];
+    
+        {% for candidate in vote_data %}
+            labels.push("{{ candidate.name|escapejs }}");
+            dataValues.push({{ candidate.votes }});
+        {% endfor %}
+    
         var voteData = {
-            labels: [{% for candidate in vote_data %}"{{ candidate.name }}",{% endfor %}],
+            labels: labels,
             datasets: [{
                 label: 'Votes',
-                data: [{% for candidate in vote_data %}{{ candidate.votes }},{% endfor %}],
+                data: dataValues,
                 backgroundColor: ['#ff6384', '#36a2eb', '#ffcd56', '#4bc0c0'],
                 borderColor: '#fff',
                 borderWidth: 1
             }]
         };
-
+    
         var myChart = new Chart(ctx, {
             type: 'bar',
             data: voteData,
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,  // Ensure aspect ratio is maintained
                 scales: {
                     y: {
                         beginAtZero: true
                     }
+                },
+                layout: {
+                    padding: {
+                        top: 20,
+                        bottom: 20
+                    }
                 }
             }
         });
-    </script>
+    </script>            
 
 </body>
 </html>
