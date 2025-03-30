@@ -1,0 +1,83 @@
+/* General styles */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+
+/* Container styling */
+
+.container {
+    width: 80%;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+
+/* Header */
+
+h1,
+h2 {
+    text-align: center;
+    color: #333;
+}
+
+
+/* Stats section */
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+}
+
+
+/* Cards */
+
+.card {
+    background: #007bff;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 200px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+
+/* Chart styling */
+
+canvas {
+    display: block;
+    margin: 20px auto;
+    max-width: 600px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Responsive styling */
+
+@media (max-width: 768px) {
+    .stats {
+        flex-direction: column;
+        align-items: center;
+    }
+    .card {
+        width: 80%;
+        margin-bottom: 10px;
+    }
+}

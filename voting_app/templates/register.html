@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register Voter</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let videoElement;
+            let canvasElement;
+            let stream;
+            let framesCaptured = 0;
+            const totalFrames = 51; // Number of frames to capture
+            const captureAfterFrame = 2; // Capture every 2nd frame
+            let framesData = []; // Array to store captured frames
+            let ktuId;
+
+            // Attach event listeners
+            document.getElementById('next-button').addEventListener('click', validateKTUId);
+            document.getElementById('capture-button').addEventListener('click', captureFaces);
+
+            // Validate KTU ID and proceed to the next step
+            function validateKTUId() {
+                ktuId = document.getElementById('ktu_id').value;
+                const ktuIdRegex = /^TVE22CS\d{3}$/; // Regex for KTU ID validation
+                if (!ktuIdRegex.test(ktuId)) {
+                    alert('Invalid KTU ID. Please enter a valid KTU ID (e.g., TVE22CS001).');
+                    return;
+                }
+
+                // Hide step 1 and show step 2
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'block';
+                startWebcam();
+            }
+
+            // Start the webcam
+            async function startWebcam() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoElement = document.getElementById('webcam');
+                    videoElement.srcObject = stream;
+                    videoElement.style.display = 'block';
+                    document.getElementById('capture-message').innerText = 'Camera started. Click "Capture Face" to register.';
+                } catch (error) {
+                    console.error('Error accessing webcam:', error);
+                    alert('Error accessing webcam. Please allow camera permissions.');
+                }
+            }
+
+            // Capture frames and send them to the server
+            async function captureFaces() {
+                if (framesCaptured >= totalFrames) {
+                    stopWebcam();
+                    await sendFramesToServer();
+                    return;
+                }
+
+                canvasElement = document.createElement('canvas');
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                const context = canvasElement.getContext('2d');
+                context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+                // Capture every 2nd frame
+                if (framesCaptured % captureAfterFrame === 0) {
+                    const imageData = canvasElement.toDataURL('image/jpeg');
+                    console.log(`Captured frame data length: ${imageData.length}`); // Log the length of the captured frame data
+
+                    framesData.push(imageData);
+                }
+
+                framesCaptured++;
+                document.getElementById('capture-message').innerText = `Captured ${framesCaptured}/${totalFrames} frames.`;
+                requestAnimationFrame(captureFaces);
+            }
+
+            // Send frames to the server
+            async function sendFramesToServer() {
+                try {
+                    // Get the CSRF token from the hidden input field
+                    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+                    const response = await fetch('/register_voter/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,  // Use the CSRF token
+                        },
+                        body: JSON.stringify({ ktu_id: ktuId, frames_data: framesData }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.message) {
+                        // Hide step 2 and show step 3
+                        document.getElementById('step2').style.display = 'none';
+                        document.getElementById('step3').style.display = 'block';
+                        document.getElementById('registration-message').innerText = result.message;
+                    }
+                } catch (error) {
+                    console.error('Error sending frames to server:', error);
+                    alert('An error occurred while sending data to the server. Please try again.');
+                }
+            }
+
+            // Stop the webcam
+            function stopWebcam() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    videoElement.srcObject = null;
+                    videoElement.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <h2>Register Voter</h2>
+    <div id="step1">
+        <label for="ktu_id">Enter KTU ID:</label>
+        <input type="text" id="ktu_id" name="ktu_id" required>
+        <button id="next-button">Next</button>
+        <p id="ktu-id-error" style="color: red;"></p>
+    </div>
+    <div id="step2" style="display: none;">
+        <p id="capture-message">Starting camera...</p>
+        <video id="webcam" autoplay style="display: none;"></video>
+        <button id="capture-button">Capture Face</button>
+    </div>
+    <div id="step3" style="display: none;">
+        <p id="registration-message"></p>
+    </div>
+
+    <!-- Add CSRF token -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+</body>
+</html>
