@@ -7,7 +7,7 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
 # Load encryption key from environment variable
-ENCRYPTION_KEY ='I34GO0mC26cHe4sLikzok6E95h6gcLCSVGX8M1kuMHY='
+ENCRYPTION_KEY ="e2SFWo_JW88JOSQvYbhAAQGjzdunUg2Bzrdb4oJX4sY="
 print("ENCRYPTION_KEY:", ENCRYPTION_KEY)
 cipher_suite = Fernet(ENCRYPTION_KEY.encode())
 
@@ -38,21 +38,29 @@ class Voter(models.Model):
         """
         Encrypt and save multiple frames of face data.
         """
-        encrypted_data = cipher_suite.encrypt(pickle.dumps(face_data))
+        from voting_app.face_recognition import FaceRecognition
+        face_data_serialized = pickle.dumps(face_data)
+        logger.debug(f"Face data before encryption for voter {self.ktu_id}: {face_data_serialized}")
+        encrypted_data = cipher_suite.encrypt(face_data_serialized)
         self.encrypted_face_data = encrypted_data
         self.save()
+
+        #  Retrain Face Recognition Model After New Voter Registration
+        logger.info(f"Retraining face recognition model after registering voter {self.ktu_id}")
+        FaceRecognition().load_training_data()
+
 
     def get_face_data(self):
         try:
             return pickle.loads(cipher_suite.decrypt(self.encrypted_face_data))
         
         except InvalidToken as e:
-            logger.error(f"Decryption failed for voter {self.ktu_id}. Invalid token error: {e}")
-            raise ValueError(f"Decryption failed for voter ID {self.ktu_id}: Invalid token.")
+            logger.error(f"Decryption failed for voter {self.ktu_id}. Invalid token error: {e}. Encrypted data length: {len(self.encrypted_face_data) if self.encrypted_face_data else 'None'}")
+            return None
     
         except Exception as e:
             logger.error(f"Unexpected error while decrypting face data for voter {self.ktu_id}: {e}")
-            raise ValueError(f"Decryption failed for voter ID {self.ktu_id}: {e}")
+            return None
 
 
     def can_vote(self):
@@ -88,11 +96,11 @@ class Vote(models.Model):
         help_text="The time when the vote was cast.",
     )
 
+    def save(self, *args, **kwargs):
+        if Vote.objects.filter(voter=self.voter).exists():
+            raise ValueError("This voter has already cast a vote.")
+        
+        super().save(*args, **kwargs)  # Ensure correct placement inside the class
+
     def __str__(self):
         return f"Vote by {self.voter.ktu_id} for {self.candidate}"
-
-# Signal to prevent duplicate votes
-@receiver(pre_save, sender=Vote)
-def prevent_duplicate_vote(sender, instance, **kwargs):
-    if Vote.objects.filter(voter=instance.voter).exists():
-        raise ValueError("This voter has already cast a vote.")
