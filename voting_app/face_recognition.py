@@ -1,7 +1,14 @@
 import cv2
 import numpy as np
+import base64
+import pickle
+from cryptography.fernet import Fernet  # Import encryption module
 from sklearn.neighbors import KNeighborsClassifier
 from .models import Voter
+
+# Use your encryption key
+ENCRYPTION_KEY = b"e2SFWo_JW88JOSQvYbhAAQGjzdunUg2Bzrdb4oJX4sY="
+cipher = Fernet(ENCRYPTION_KEY)  # Initialize cipher for encryption/decryption
 
 class FaceRecognition:
     def __init__(self):
@@ -11,30 +18,37 @@ class FaceRecognition:
         self.labels = []
         self.load_training_data()  # Load and train model on initialization
 
+    def decrypt_face_data(self, encrypted_data):
+        """Decrypt face data using the provided encryption key."""
+        try:
+            decrypted_data = cipher.decrypt(encrypted_data)  # Decrypt the data
+            return pickle.loads(decrypted_data)  # Deserialize decrypted data
+        except Exception as e:
+            print(f"Error decrypting face data: {e}")
+            return None
+
     def load_training_data(self):
+        """Load face data from the database and train the model."""
         self.faces = []
         self.labels = []
-        num_voters = Voter.objects.count()
 
         for voter in Voter.objects.all():
-            face_data = voter.get_face_data()  # Fetch face data
+            encrypted_face_data = voter.encrypted_face_data  # Fetch encrypted face data
 
-            if face_data is None or not isinstance(face_data, (np.ndarray, list)) or (isinstance(face_data, np.ndarray) and face_data.size == 0):
-                print(f"Skipping voter {voter.ktu_id}: No valid face data")
+            if not encrypted_face_data:
+                print(f"Skipping voter {voter.ktu_id}: No face data found")
                 continue
 
-            if isinstance(face_data, list):
-                face_data = np.array(face_data)  # Convert lists to NumPy arrays
+            face_data = self.decrypt_face_data(encrypted_face_data)  # Decrypt data
+
+            if not face_data or not isinstance(face_data, list):
+                print(f"Skipping voter {voter.ktu_id}: Invalid face data format after decryption")
+                continue
 
             try:
-                if isinstance(face_data, np.ndarray) and face_data.ndim == 4:
-                    for i in range(face_data.shape[0]):
-                        face_resized = cv2.resize(face_data[i], (50, 50)).flatten()
-                        self.faces.append(face_resized)
-                        self.labels.append(voter.ktu_id)
-                else:
-                    face_resized = cv2.resize(face_data, (50, 50)).flatten()
-                    self.faces.append(face_resized)
+                for img_array in face_data:
+                    img_resized = cv2.resize(np.array(img_array, dtype=np.uint8), (50, 50)).flatten()
+                    self.faces.append(img_resized)
                     self.labels.append(voter.ktu_id)
             except Exception as e:
                 print(f"Error processing face data for voter {voter.ktu_id}: {e}")
@@ -53,6 +67,7 @@ class FaceRecognition:
             print("Warning: No face data available for training. Model will not be trained.")
 
     def recognize_voter(self, frame):
+        """Recognize a voter from a given frame."""
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Dynamically adjust scaleFactor and minNeighbors based on voter count
