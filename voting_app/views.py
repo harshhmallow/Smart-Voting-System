@@ -13,6 +13,7 @@ import pickle
 from .models import Voter, Vote
 from .face_recognition import FaceRecognition
 from voting_app.forms import VoterForm
+from cryptography.fernet import Fernet
 
 face_recognition = FaceRecognition()  # Initialize face recognition
 
@@ -51,6 +52,7 @@ def get_vote_counts(request):
         logger.error(f"Error in get_vote_counts: {str(e)}")
         return JsonResponse({'message': 'An error occurred while fetching vote counts.'}, status=500)
 # Ensure that face recognition is only loaded when needed to avoid circular imports
+
 @csrf_exempt
 def verify_voter(request):
     """Handles voter face recognition to verify identity before voting."""
@@ -88,21 +90,15 @@ def verify_voter(request):
 
             logger.debug("Successfully decoded base64 image. Proceeding with face recognition.")
 
-            # Initialize face recognition
-            face_recognition = FaceRecognition()  # Only initialize when needed
-            if not face_recognition.is_fitted:
-                logger.warning("Face recognition model is not fitted. Cannot recognize voter.")
-                return JsonResponse({'message': 'Face recognition model is not ready.'}, status=500)
-
-            logger.debug(f"Attempting to decrypt face data for voter ID: {ktu_id}")
+            # Check if the voter exists
             try:
-                face_data = Voter.objects.get(ktu_id=ktu_id).get_face_data()
-            except ValueError as e:
-                logger.error(f"Decryption failed: {e}")
-                return JsonResponse({'message': str(e)}, status=400)
+                voter = Voter.objects.get(ktu_id=ktu_id)
+                face_data = voter.get_face_data()
+            except Voter.DoesNotExist:
+                logger.error(f"Voter with KTU ID {ktu_id} does not exist.")
+                return JsonResponse({'message': 'Voter not found.'}, status=404)
 
             # Recognize the voter based on the face in the image
-
             recognized_ktu_id = face_recognition.recognize_voter(frame)
 
             # Compare recognized voter ID with the provided KTU ID
@@ -121,6 +117,8 @@ def verify_voter(request):
     # Handle invalid HTTP methods (only POST is allowed)
     return JsonResponse({'message': 'Invalid request method.'}, status=405)
 
+ENCRYPTION_KEY = b'e2SFWo_JW88JOSQvYbhAAQGjzdunUg2Bzrdb4oJX4sY='  
+cipher = Fernet(ENCRYPTION_KEY)
 
 @csrf_exempt
 def register_voter(request):
@@ -154,18 +152,22 @@ def register_voter(request):
                         face_data_list.append(resized_img.tolist())
 
             if face_data_list:
-                # Check if the voter already exists
+                # Encrypt serialized face data
+                serialized_data = pickle.dumps(face_data_list)  # Serialize face data
+                encrypted_face_data = cipher.encrypt(serialized_data)  # Encrypt it
+
+                # Save voter data with encrypted face data
                 voter, created = Voter.objects.update_or_create(
                     ktu_id=ktu_id,
-                    defaults={'encrypted_face_data': pickle.dumps(face_data_list)}  # Overwrite the existing face data
+                    defaults={'encrypted_face_data': encrypted_face_data}  # Store encrypted data
                 )
 
                 if created:
                     return JsonResponse({'message': 'Registration successful! Your face data has been saved.'})
                 else:
                     return JsonResponse({'message': 'Voter data updated successfully!'})
-            else:
-                return JsonResponse({'message': 'No valid face data detected in any frame.'}, status=400)
+
+            return JsonResponse({'message': 'No valid face data detected in any frame.'}, status=400)
 
         except json.JSONDecodeError:
             return JsonResponse({'message': 'Invalid JSON data.'}, status=400)
@@ -240,3 +242,4 @@ def vote(request):
 
         return JsonResponse({'message': f'Vote for {candidate} recorded successfully.'})
 
+    return render(request, 'vote.html')
