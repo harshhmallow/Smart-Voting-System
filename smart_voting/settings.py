@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-ENCRYPTION_KEY ='I34GO0mC26cHe4sLikzok6E95h6gcLCSVGX8M1kuMHY='
+ENCRYPTION_KEY ='e2SFWo_JW88JOSQvYbhAAQGjzdunUg2Bzrdb4oJX4sY='
 print("ENCRYPTION_KEY:", ENCRYPTION_KEY)
 if not ENCRYPTION_KEY:
     raise ValueError("No encryption key found in environment variables.")
@@ -24,31 +24,28 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
+        'verbose': {
+            'format': '[%(asctime)s] %(levelname)s %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         },
     },
     'handlers': {
-        'console': {
+        'file': {
             'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'class': 'logging.FileHandler',
+            'filename': 'voting_system.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'voting_app': {
-            'handlers': ['console'],
+            'handlers': ['file'],
             'level': 'DEBUG',
             'propagate': True,
         },
     },
 }
+
 
 # Application definition
 INSTALLED_APPS = [
