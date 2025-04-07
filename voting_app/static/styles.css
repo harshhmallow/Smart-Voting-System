@@ -195,6 +195,78 @@ canvas {
     height: auto !important;
 }
 
+/*black card in voter registration flow*/
+
+
+.center-content {
+    display: flex;
+    justify-content: center;   /* center horizontally */
+    align-items: center;       /* center vertically */
+    height: 100vh;             /* full screen height */
+    margin-left: 280px;        /* width of sidebar */
+    padding: 2rem;
+}
+
+
+.registration-card {
+    background-color: #111; /* dark card */
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    width: 400px;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.registration-card h2 {
+    font-weight: 600;
+    font-size: 20px;
+    margin-bottom: 25px;
+    color: #fff;
+}
+
+.registration-card input[type="text"] {
+    padding: 14px 20px;
+    border-radius: 15px;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #000;
+}
+
+.registration-card button {
+    background-color: transparent;
+    color: #fff;
+    border: 1px solid #fff;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.registration-card button:hover {
+    background-color: #fff;
+    color: #000;
+}
+.step-card video {
+    margin-bottom: 20px;
+}
+
+.step-card button {
+    display: inline-block;
+}
+.registration-card h2,
+.registration-card p {
+    text-align: center;
+}
+
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .stats-chart-wrapper {
@@ -218,4 +290,6 @@ canvas {
         max-width: 90%;
         width: 100%;
     }
+   
+    
 }

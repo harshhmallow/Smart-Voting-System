@@ -1,52 +1,89 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Voter</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar">
+        <img src="{% static 'images/cet-logo.png' %}" alt="College Logo">
+        <a href="{% url 'admin_dashboard' %}" class="menu-item">Dashboard</a>
+        <a href="{% url 'register_page' %}" class="menu-item selected">Register New Voters</a>
+        <a href="{% url 'voter_list' %}" class="menu-item">Voter List</a>
+        <a href="{% url 'live_voting_statistics' %}" class="menu-item">Live Voting Statistics</a>
+    </div>
+
+    <div class="content center-content">
+        <div id="step1" class="registration-card">
+            <h2>Voter Registration</h2>
+            
+                <input type="text" id="ktu_id" placeholder="Enter KTU ID" required>
+                <button id="next-button">Confirm</button>
+
+            <p id="ktu-id-error" style="color: red; margin-top: 10px;"></p>
+        </div>
+
+        <div id="step2" class="registration-card step-card" style="display: none;">
+            <h2>Voter Registration</h2>
+            <p id="capture-message">Starting camera...</p>
+            <video id="webcam" autoplay style="display: none; width: 100%; border-radius: 10px; margin-bottom: 20px;"></video>
+            <div style="text-align: center;">
+                <button id="capture-button">Capture Face</button>
+            </div>
+        </div>
+        
+
+        <div id="step3" class="registration-card" style="display: none;">
+            <h2>Voter Registration</h2>
+            <p id="registration-message"></p>
+        </div>
+    </div>
+
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             let videoElement;
             let canvasElement;
             let stream;
             let framesCaptured = 0;
-            const totalFrames = 51; // Number of frames to capture
-            const captureAfterFrame = 2; // Capture every 2nd frame
-            let framesData = []; // Array to store captured frames
+            const totalFrames = 51;
+            const captureAfterFrame = 2;
+            let framesData = [];
             let ktuId;
 
-            // Attach event listeners
             document.getElementById('next-button').addEventListener('click', validateKTUId);
             document.getElementById('capture-button').addEventListener('click', captureFaces);
 
-            // Validate KTU ID and proceed to the next step
             function validateKTUId() {
                 ktuId = document.getElementById('ktu_id').value;
-                const ktuIdRegex = /^TVE22CS\d{3}$/; // Regex for KTU ID validation
+                const ktuIdRegex = /^TVE22CS\d{3}$/;
                 if (!ktuIdRegex.test(ktuId)) {
-                    alert('Invalid KTU ID. Please enter a valid KTU ID (e.g., TVE22CS001).');
+                    document.getElementById('ktu-id-error').innerText = 'Invalid KTU ID. Format: TVE22CS001';
                     return;
                 }
 
-                // Hide step 1 and show step 2
                 document.getElementById('step1').style.display = 'none';
                 document.getElementById('step2').style.display = 'block';
                 startWebcam();
             }
 
-            // Start the webcam
             async function startWebcam() {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({ video: true });
                     videoElement = document.getElementById('webcam');
                     videoElement.srcObject = stream;
                     videoElement.style.display = 'block';
-                    document.getElementById('capture-message').innerText = 'Camera started. Click "Capture Face" to register.';
+                    document.getElementById('capture-message').innerText = 'Camera started. Click "Capture Face".';
                 } catch (error) {
-                    console.error('Error accessing webcam:', error);
                     alert('Error accessing webcam. Please allow camera permissions.');
                 }
             }
 
-            // Capture frames and send them to the server
             async function captureFaces() {
                 if (framesCaptured >= totalFrames) {
                     stopWebcam();
@@ -60,11 +97,8 @@
                 const context = canvasElement.getContext('2d');
                 context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
-                // Capture every 2nd frame
                 if (framesCaptured % captureAfterFrame === 0) {
                     const imageData = canvasElement.toDataURL('image/jpeg');
-                    console.log(`Captured frame data length: ${imageData.length}`); // Log the length of the captured frame data
-
                     framesData.push(imageData);
                 }
 
@@ -73,39 +107,32 @@
                 requestAnimationFrame(captureFaces);
             }
 
-            // Send frames to the server
             async function sendFramesToServer() {
                 try {
-                    // Get the CSRF token from the hidden input field
                     const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
 
                     const response = await fetch('/register_voter/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken,  // Use the CSRF token
+                            'X-CSRFToken': csrfToken,
                         },
                         body: JSON.stringify({ ktu_id: ktuId, frames_data: framesData }),
                     });
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
                     const result = await response.json();
                     if (result.message) {
-                        // Hide step 2 and show step 3
                         document.getElementById('step2').style.display = 'none';
                         document.getElementById('step3').style.display = 'block';
                         document.getElementById('registration-message').innerText = result.message;
                     }
                 } catch (error) {
-                    console.error('Error sending frames to server:', error);
-                    alert('An error occurred while sending data to the server. Please try again.');
+                    alert('An error occurred while sending data to the server.');
                 }
             }
 
-            // Stop the webcam
             function stopWebcam() {
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
@@ -115,25 +142,5 @@
             }
         });
     </script>
-</head>
-<body>
-    <h2>Register Voter</h2>
-    <div id="step1">
-        <label for="ktu_id">Enter KTU ID:</label>
-        <input type="text" id="ktu_id" name="ktu_id" required>
-        <button id="next-button">Next</button>
-        <p id="ktu-id-error" style="color: red;"></p>
-    </div>
-    <div id="step2" style="display: none;">
-        <p id="capture-message">Starting camera...</p>
-        <video id="webcam" autoplay style="display: none;"></video>
-        <button id="capture-button">Capture Face</button>
-    </div>
-    <div id="step3" style="display: none;">
-        <p id="registration-message"></p>
-    </div>
-
-    <!-- Add CSRF token -->
-    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 </body>
 </html>
