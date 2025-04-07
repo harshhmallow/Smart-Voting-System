@@ -1,83 +1,217 @@
-/* General styles */
-
+/* General Layout */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    font-family: 'Plus Jakarta Sans', Arial, sans-serif;
     margin: 0;
     padding: 0;
+    display: flex;
+    background: #f4f4f4;
 }
 
-
-/* Container styling */
-
-.container {
-    width: 80%;
-    margin: 20px auto;
-    background: white;
+/* Sidebar */
+.sidebar {
+    width: 280px;
+    background: black;
+    color: white;
+    height: 100vh;
     padding: 20px;
-    box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
 }
 
+.sidebar img {
+    width: 250px;
+    margin-bottom: 20px;
+}
+
+.menu-item {
+    padding: 12px 20px;
+    width: 200px;
+    text-align: center;
+    cursor: pointer;
+    background: transparent;
+    border-radius: 25px;
+    transition: background 0.3s, color 0.3s;
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.menu-item:hover {
+    background: rgb(46, 45, 45);
+}
+
+.menu-item.selected {
+    background: white;
+    color: black;
+    font-weight: bold;
+}
+
+/* Content */
+.content {
+    flex: 1;
+    margin-left: 300px;
+    padding: 30px;
+}
 
 /* Header */
-
-h1,
-h2 {
-    text-align: center;
-    color: #333;
-}
-
-
-/* Stats section */
-
-.stats {
+.dashboard-header {
     display: flex;
-    justify-content: space-around;
-    margin: 20px 0;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
 }
 
+.logout-button {
+    background: black;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease-in-out;
+}
 
-/* Cards */
+.logout-button:hover {
+    background: rgb(46, 45, 45);
+}
 
-.card {
-    background: #007bff;
+/* Dashboard Sections Container */
+/* Main wrapper for stats and chart */
+.stats-chart-wrapper {
+    display: flex;
+    align-items: flex-start; /* <- changed from stretch to flex-start */
+    margin-top: 30px;
+    gap: 20px;
+    height: 100%; /* or set a max-height if needed */
+}
+
+/* Stats column */
+.stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 800px;
+    flex-shrink: 0;
+}
+
+.stat-card {
+    background: black;
     color: white;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     text-align: center;
-    width: 200px;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s ease-in-out;
+    height: 120px;           /* Set consistent height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
 }
 
-.card:hover {
-    transform: scale(1.05);
+/* Chart + button */
+.chart-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    max-height: 430px; /* Keep height balanced with stat cards */
 }
 
-
-/* Chart styling */
-
-canvas {
-    display: block;
-    margin: 20px auto;
-    max-width: 600px;
+.chart-container {
+    border-radius: 10px;
+    padding: 15px;
     background: white;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
+/* Chart canvas */
+canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 400px;
+}
 
-/* Responsive styling */
+/* Button */
+.live-stats-btn {
+    padding: 10px 16px;
+    background: transparent;
+    color: black;
+    border: 2px solid black;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-self: center;
+    margin-top: 15px;
+}
 
-@media (max-width: 768px) {
-    .stats {
+.live-stats-btn:hover {
+    background: black;
+    color: white;
+}
+
+/* Voter List Section */
+.voter-list-container {
+    width: 260px;
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.voter-list-container h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.voter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.voter-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+/* Canvas responsiveness */
+canvas {
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .stats-chart-wrapper {
         flex-direction: column;
         align-items: center;
     }
-    .card {
-        width: 80%;
-        margin-bottom: 10px;
+
+    .stats-container {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .stat-card {
+        width: 200px;
+        margin: 5px;
+    }
+
+    .chart-container, .voter-list-container {
+        max-width: 90%;
+        width: 100%;
     }
 }

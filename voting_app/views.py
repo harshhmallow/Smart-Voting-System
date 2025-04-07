@@ -208,6 +208,26 @@ def admin_dashboard(request):
     }
 
     return render(request, 'admin_dashboard.html', context)
+@staff_member_required
+def live_voting_statistics(request):
+    voters_count = Voter.objects.count()
+    votes_count = Vote.objects.count()
+    election_status = "Ongoing" if votes_count < voters_count else "Completed"
+
+    leaderboard_data = (
+        Vote.objects.values('candidate')
+        .annotate(vote_count=Count('candidate'))
+        .order_by('-vote_count')
+    )
+
+    context = {
+        'voters_count': voters_count,
+        'votes_count': votes_count,
+        'election_status': election_status,
+        'leaderboard': leaderboard_data,
+    }
+
+    return render(request, 'live_voting_statistics.html', context)
 
 @csrf_exempt
 def vote(request):
