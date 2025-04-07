@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Voting Statistics</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar">
+        <img src="{% static 'images/cet-logo.png' %}" alt="College Logo">
+        <a href="{% url 'admin_dashboard' %}" class="menu-item">Election Overview</a>
+        <a href="{% url 'register_page' %}" class="menu-item">Register New Voters</a>
+        <a href="{% url 'voter_list' %}" class="menu-item">Voter List</a>
+        <a href="{% url 'live_voting_statistics' %}" class="menu-item selected">Live Voting Statistics</a>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <main style="flex: 1; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between;">
+                <h1>Hello Admin</h1>
+            </div>
+
+            <!-- Stats Panel -->
+            <div style="border: 1px solid #ccc; border-radius: 20px; padding: 2rem; display: flex; gap: 2rem; margin-top: 2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); background: white;">
+                <div style="flex: 1; text-align: center;">
+                    <p>No. of Registered Voters</p>
+                    <h1>{{ voters_count }}</h1>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <p>No. of Votes Casted</p>
+                    <h1>{{ votes_count }}</h1>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <p>Election Status</p>
+                    <h1 
+                        style="color: {% if election_status == 'Ongoing' %}#00cc44{% else %}#cc0000{% endif %};"
+                    >
+                        {{ election_status }}
+                    </h1>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <h2 style="margin-top: 3rem;">Leaderboard</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+                <thead>
+                    <tr style="background: black; color: white;">
+                        <th style="padding: 1rem; border-top-left-radius: 10px;">Rank</th>
+                        <th>Name</th>
+                        <th style="border-top-right-radius: 10px;">No. of Votes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in leaderboard %}
+                    <tr style="text-align: center;">
+                        <td style="padding: 1rem;">{{ forloop.counter }}</td>
+                        <td>{{ entry.candidate }}</td>
+                        <td>{{ entry.vote_count }} Votes</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </main>
+    </div>
+</body>
+</html>

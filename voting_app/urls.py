@@ -13,4 +13,7 @@ urlpatterns = [
     path('verify_voter/', views.verify_voter, name='verify_voter'),  # Endpoint for face verification
     path('api/get_vote_counts/', views.get_vote_counts, name='get_vote_counts'),  # Add trailing slash
     # Add any new endpoints here as needed
+    path('live-voting-stats/', views.live_voting_statistics, name='live_voting_statistics'),
+    path('voter-list/', views.voter_list, name='voter_list'),
+
 ]

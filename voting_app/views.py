@@ -212,10 +212,11 @@ def admin_dashboard(request):
 def live_voting_statistics(request):
     voters_count = Voter.objects.count()
     votes_count = Vote.objects.count()
-    election_status = "Ongoing" if votes_count < voters_count else "Completed"
+    election_status = "Ongoing"  # Replace with actual logic if you have it
 
-    leaderboard_data = (
-        Vote.objects.values('candidate')
+    leaderboard = (
+        Vote.objects
+        .values('candidate')
         .annotate(vote_count=Count('candidate'))
         .order_by('-vote_count')
     )
@@ -224,10 +225,20 @@ def live_voting_statistics(request):
         'voters_count': voters_count,
         'votes_count': votes_count,
         'election_status': election_status,
-        'leaderboard': leaderboard_data,
+        'leaderboard': leaderboard,
     }
 
     return render(request, 'live_voting_statistics.html', context)
+
+@staff_member_required
+def voter_list(request):
+    voters = Voter.objects.all()
+    context = {
+        'voters': voters,
+    }
+    return render(request, 'voter_list.html', context)
+
+
 
 @csrf_exempt
 def vote(request):

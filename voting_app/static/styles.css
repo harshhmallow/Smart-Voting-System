@@ -48,6 +48,10 @@ body {
     color: black;
     font-weight: bold;
 }
+a {
+    text-decoration: none;
+    color: inherit; /* optional: makes link text inherit color from parent */
+}
 
 /* Content */
 .content {

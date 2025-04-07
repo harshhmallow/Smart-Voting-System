@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <title>Voter List</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar">
+        <img src="{% static 'images/cet-logo.png' %}" alt="College Logo">
+        <a href="{% url 'admin_dashboard' %}" class="menu-item">Election Overview</a>
+        <a href="{% url 'register_page' %}" class="menu-item">Register New Voters</a>
+        <a href="{% url 'voter_list' %}" class="menu-item selected">Voter List</a>
+        <a href="{% url 'live_voting_statistics' %}" class="menu-item">Live Voting Statistics</a>
+    </div>
+
+    <div class="content">
+        <main style="padding: 2rem;">
+            <h1>Voter List</h1>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 2rem;">
+                <thead>
+                    <tr style="background: black; color: white;">
+                        <th style="padding: 1rem; border-top-left-radius: 10px;">Sl. No.</th>
+                        <th>KTU ID</th>
+                        <th style="border-top-right-radius: 10px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for voter in voters %}
+                    <tr style="text-align: center;">
+                        <td style="padding: 1rem;">{{ forloop.counter }}</td>
+                        <td>{{ voter.ktu_id }}</td>
+                        <td>
+                            {% if voter.has_voted %}
+                                <span style="color: green;">Voted</span>
+                            {% else %}
+                                <span style="color: red;">Not Voted</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </main>
+    </div>
+</body>
+</html>
