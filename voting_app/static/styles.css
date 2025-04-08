@@ -26,6 +26,19 @@ body {
     width: 250px;
     margin-bottom: 20px;
 }
+.vote-page .sidebar img {
+    margin-bottom: 0px;  /* Reduce as needed */
+}
+.vote-page .sidebar h5 {
+    margin-bottom: 4px; /* reduce space below the heading */
+}
+
+.vote-page .tagline {
+    font-size: 12px;
+    margin-top: 0; /* remove top margin to pull it closer */
+}
+
+
 
 .menu-item {
     padding: 12px 20px;
@@ -214,11 +227,13 @@ canvas {
     padding: 2rem;
     border-radius: 16px;
     width: 400px;
+    max-width: 90vw;
     margin-bottom: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    box-sizing: border-box;
 }
 
 .registration-card h2 {
@@ -241,6 +256,7 @@ canvas {
 
 .registration-card button {
     background-color: transparent;
+    align-self: center;
     color: #fff;
     border: 1px solid #fff;
     padding: 8px 20px;
@@ -254,6 +270,47 @@ canvas {
     background-color: #fff;
     color: #000;
 }
+.vote-form-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;      /* this centers the dropdown and button */
+    justify-content: center;
+    width: 100%;
+    gap: 15px;                /* space between elements */
+}
+
+.vote-form-vertical select {
+    background-color: #fff;            /* white background */
+    color: #000;                       /* black text */
+    padding: 12px 16px;
+    width: 100%;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    appearance: none;                  /* removes default arrow styling */
+    cursor: pointer;
+    position: relative;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23000" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 18px;
+}
+
+.vote-form-vertical select:hover {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+    background-color: #f0f0f0;
+}
+.vote-form-vertical button {
+    width: 100%;
+    max-width: 180px;
+    text-align: center;
+}
+
+
+
 .step-card video {
     margin-bottom: 20px;
 }
@@ -264,6 +321,18 @@ canvas {
 .registration-card h2,
 .registration-card p {
     text-align: center;
+}
+.vote-input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+}
+.vote-input-group input,
+.vote-input-group button {
+    width: 100%;
+    max-width: 300px;
 }
 
 

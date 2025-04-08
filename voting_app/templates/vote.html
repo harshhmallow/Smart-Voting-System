@@ -1,136 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vote</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-
-    <script>
-        let videoStream = null;
-
-        function startWebcam() {
-            const video = document.getElementById("video");
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    video.srcObject = stream;
-                    videoStream = stream;
-                })
-                .catch(err => console.error("Webcam access denied:", err));
-        }
-
-        function captureFrame() {
-            const canvas = document.createElement("canvas");
-            const video = document.getElementById("video");
-
-            if (!video.videoWidth || !video.videoHeight) {
-                console.error("Webcam not ready.");
-                alert("Webcam not ready. Please wait a few seconds and try again.");
-                return null;
-            }
-
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            const imageData = canvas.toDataURL("image/jpeg");
-            console.log("Captured frame data:", imageData.substring(0, 50) + "..."); // Log preview
-            return imageData;
-        }
-
-        function verifyIdentity(event) {
-            event.preventDefault();
-            const ktuId = document.getElementById("ktu_id").value.trim();
-            const capturedFrame = captureFrame();
-    
-    if (!ktuId) {
-        alert("Please enter your KTU ID.");
-        return;
-    }
-    if (!capturedFrame) {
-        alert("No face captured. Please make sure your camera is working.");
-        return;
-    }
-
-    // Ensure base64 data is properly formatted
-    const base64Data = capturedFrame.split(',')[1];  // Extract only the Base64 content
-
-    const payload = JSON.stringify({ ktu_id: ktuId, frame_data: base64Data });
-
-    console.log("Sending JSON payload:", payload); // Debugging log
-
-    fetch("/verify_voter/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: payload  // Send the payload as a proper JSON string
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Response:", data);
-        alert(data.message);
-        if (data.verified) {
-            document.getElementById("vote-form").style.display = "block";
-        }
-    })
-    .catch(error => console.error("Error:", error));
-}
-
-
-        function submitVote(event) {
-            event.preventDefault();
-            const ktuId = document.getElementById("ktu_id").value.trim();
-            const candidate = document.getElementById("candidate").value;
-
-            if (!ktuId || !candidate) {
-                alert("Please enter KTU ID and select a candidate.");
-                return;
-            }
-
-            fetch("/vote/", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `ktu_id=${ktuId}&candidate=${candidate}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                if (data.message.includes("successfully")) {
-                    document.getElementById("vote-form").reset();
-                }
-            })
-            .catch(error => console.error("Error:", error));
-        }
-
-        function stopWebcam() {
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h2 class="text-center">Vote</h2>
-        <div class="card shadow p-4">
-            <form onsubmit="verifyIdentity(event)">
-                <div class="mb-3">
-                    <label for="ktu_id" class="form-label">KTU ID:</label>
-                    <input type="text" class="form-control" id="ktu_id" name="ktu_id" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Verify Identity</button>
-            </form>
+<body class="vote-page">
+    <div class="sidebar" style="align-items: center;">
+        <img src="{% static 'images/cet-logo.png' %}" alt="College Logo">
+        <h5>COLLEGE OF ENGINEERING TRIVANDRUM</h5>
+        <p class="tagline">कर्म ज्यायो ह्यकर्मण: | Action is Superior to Inaction</p>
+    </div>
+
+    <div class="content center-content">
+        <!-- Step 1 -->
+        <div id="step1" class="registration-card">
+            <h2>Vote</h2>
+            <input type="text" id="ktu_id" placeholder="Enter KTU ID" required>
+            <button id="verify-button">Verify Identity</button>
+            <p id="ktu-id-error" style="color: red; margin-top: 10px;"></p>
         </div>
 
-        <div class="mt-4 text-center">
-            <video id="video" width="300" height="250" autoplay></video>
+        <!-- Step 2 -->
+        <div id="step2" class="registration-card" style="display: none;">
+            <h2>Verifying Identity...</h2>
+            <p id="capture-message">Starting camera...</p>
+            <video id="webcam" autoplay style="display: none; width: 100%; border-radius: 10px; margin-bottom: 20px;"></video>
         </div>
 
-        <div class="card shadow p-4 mt-4" id="vote-form" style="display: none;">
-            <form onsubmit="submitVote(event)">
-                <div class="mb-3">
-                    <label for="candidate" class="form-label">Select Candidate:</label>
-                    <select class="form-select" id="candidate" name="candidate" required>
+
+        <!-- Step 3 -->
+        <div id="step3" class="registration-card" style="display: none;">
+            <h2>Cast Your Vote</h2>
+            <form id="vote-form" class="vote-form-vertical">
+                <div class="vote-input-group">
+                    <label for="candidate">Select Candidate:</label>
+                    <select id="candidate" required>
                         <option value="">-- Select --</option>
                         <option value="KSU">KSU</option>
                         <option value="SFI">SFI</option>
@@ -138,11 +46,167 @@
                         <option value="NOTA">NOTA</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-success">Submit Vote</button>
+                <button type="submit">Vote</button>
             </form>
+        </div>
+
+
+        <!-- Step 4 -->
+        <div id="step4" class="registration-card" style="display: none;">
+            <h2>Success!</h2>
+            <p id="final-message">Your vote has been submitted successfully.</p>
+            <div style="display: flex; justify-content: center; margin-top: 20px;">
+                <button id="back-button">Back to Voting</button>
+            </div>
+            
         </div>
     </div>
 
-    <script>startWebcam();</script>
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    <script>
+        let stream = null;
+        let videoElement;
+
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        const step4 = document.getElementById('step4');
+
+        const verifyBtn = document.getElementById('verify-button');
+        const voteForm = document.getElementById('vote-form');
+        const backBtn = document.getElementById('back-button');
+
+        verifyBtn.addEventListener('click', async () => {
+            const ktuId = document.getElementById('ktu_id').value.trim();
+            const ktuIdRegex = /^TVE22CS\d{3}$/;
+
+            if (!ktuIdRegex.test(ktuId)) {
+                document.getElementById('ktu-id-error').innerText = 'Invalid KTU ID. Format: TVE22CS001';
+                return;
+            }
+
+            step1.style.display = 'none';
+            step2.style.display = 'block';
+            startWebcam();
+
+            setTimeout(() => {
+                captureFrameAndVerify(ktuId);
+            }, 2500); // give time for webcam to start
+        });
+
+        async function startWebcam() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement = document.getElementById('webcam');
+                videoElement.srcObject = stream;
+                videoElement.style.display = 'block';
+                document.getElementById('capture-message').innerText = 'Capturing face...';
+            } catch (err) {
+                alert('Camera access denied.');
+            }
+        }
+
+        async function captureFrameAndVerify(ktuId) {
+            const canvas = document.createElement("canvas");
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const base64Data = canvas.toDataURL("image/jpeg").split(',')[1];
+
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            const response = await fetch("/verify_voter/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({ ktu_id: ktuId, frame_data: base64Data })
+            });
+
+            const data = await response.json();
+            stopWebcam();
+
+            if (data.verified) {
+                step2.style.display = 'none';
+                step3.style.display = 'block';
+            } else {
+                alert(data.message || "Verification failed.");
+                
+                // Reset layout and input width explicitly
+                step1.style.display = 'flex';
+                step2.style.display = 'none';
+                // Clear error message if any
+                document.getElementById('ktu-id-error').innerText = "";
+
+                // Remove any manually applied inline styles
+                const ktuInput = document.getElementById('ktu_id');
+                ktuInput.removeAttribute('style');
+
+                const verifyButton = document.getElementById('verify-button');
+                verifyButton.removeAttribute('style');
+
+            }
+
+
+        }
+
+        voteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ktuId = document.getElementById('ktu_id').value.trim();
+            const candidate = document.getElementById('candidate').value;
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            const response = await fetch("/vote/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken
+                },
+                body: `ktu_id=${ktuId}&candidate=${candidate}`
+            });
+
+            const result = await response.json();
+
+            step3.style.display = 'none';
+            step4.style.display = 'block';
+            document.getElementById('final-message').innerText = result.message;
+        });
+
+        backBtn.addEventListener('click', () => {
+            const ktuInput = document.getElementById('ktu_id');
+            const candidateDropdown = document.getElementById('candidate');
+            const ktuError = document.getElementById('ktu-id-error');
+            const verifyButton = document.getElementById('verify-button');
+
+            // Reset form values
+            ktuInput.value = "";
+            candidateDropdown.value = "";
+            ktuError.innerText = "";
+
+            // Reset any inline styles (if applied during earlier flow)
+            ktuInput.removeAttribute('style');
+            verifyButton.removeAttribute('style');
+
+            // Optionally remove unwanted CSS classes if dynamically added (e.g. error class)
+            ktuInput.classList.remove('error');
+
+            // Switch back to Step 1
+            step4.style.display = 'none';
+            step3.style.display = 'none';
+            step2.style.display = 'none';
+            step1.style.display = 'flex';  // use flex instead of block for card-level layout!
+        });
+
+
+        function stopWebcam() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                document.getElementById('webcam').style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
