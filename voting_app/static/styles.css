@@ -24,18 +24,19 @@ body {
 
 .sidebar img {
     width: 250px;
-    margin-bottom: 20px;
+    margin-bottom: 0px;
 }
-.vote-page .sidebar img {
+.sidebar img {
     margin-bottom: 0px;  /* Reduce as needed */
 }
-.vote-page .sidebar h5 {
+.sidebar h5 {
     margin-bottom: 4px; /* reduce space below the heading */
 }
 
-.vote-page .tagline {
+.tagline {
     font-size: 12px;
     margin-top: 0; /* remove top margin to pull it closer */
+    margin-bottom: 50px;
 }
 
 
